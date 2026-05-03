@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Chart of Accounts{% endblock %}
+{% block page_title %}Chart of Accounts{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-list-columns-reverse me-2 text-primary"></i>Chart of Accounts</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active">Chart of Accounts</li>
+            </ol>
+        </nav>
+    </div>
+    {% if current_user.role in ('admin', 'accountant') %}
+    <a href="{{ url_for('accounting.create_account') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Add Account
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filter Bar -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span style="font-size:12px; font-weight:600; color:#6c757d;">Filter by type:</span>
+            <a href="{{ url_for('accounting.accounts') }}"
+               class="btn btn-sm {% if not current_type %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
+            {% for atype in account_types %}
+            <a href="{{ url_for('accounting.accounts', type=atype) }}"
+               class="btn btn-sm {% if current_type == atype %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                {{ atype }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Accounts <span class="badge bg-secondary ms-1">{{ accounts|length }}</span></span>
+    </div>
+    <div class="card-body p-0">
+        {% if accounts %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Account Name</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th class="text-end">Balance</th>
+                        <th>Status</th>
+                        {% if current_user.role in ('admin', 'accountant') %}
+                        <th class="text-center">Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in accounts %}
+                    <tr>
+                        <td class="monospace fw-semibold">{{ account.code }}</td>
+                        <td>
+                            <span class="fw-semibold">{{ account.name }}</span>
+                        </td>
+                        <td>
+                            <span class="badge
+                                {% if account.account_type == 'Asset' %}bg-primary
+                                {% elif account.account_type == 'Liability' %}bg-warning text-dark
+                                {% elif account.account_type == 'Equity' %}bg-success
+                                {% elif account.account_type == 'Revenue' %}bg-info text-dark
+                                {% else %}bg-danger{% endif %}">
+                                {{ account.account_type }}
+                            </span>
+                        </td>
+                        <td class="text-muted" style="font-size:12.5px;">
+                            {{ account.description[:60] if account.description else '—' }}
+                        </td>
+                        <td class="text-end monospace fw-semibold
+                            {% if account.balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ "%.2f"|format(account.balance) }}
+                        </td>
+                        <td>
+                            {% if account.is_active %}
+                            <span class="badge bg-success">Active</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        {% if current_user.role in ('admin', 'accountant') %}
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{{ url_for('accounting.edit_account', account_id=account.id) }}"
+                                   class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="POST" action="{{ url_for('accounting.toggle_account_active', account_id=account.id) }}"
+                                      style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-{% if account.is_active %}warning{% else %}success{% endif %}"
+                                            title="{% if account.is_active %}Deactivate{% else %}Activate{% endif %}"
+                                            onclick="return confirm('{% if account.is_active %}Deactivate{% else %}Activate{% endif %} this account?')">
+                                        <i class="bi bi-{% if account.is_active %}pause{% else %}play{% endif %}"></i>
+                                    </button>
+                                </form>
+                                <a href="{{ url_for('reports.general_ledger', account_id=account.id) }}"
+                                   class="btn btn-sm btn-outline-secondary" title="View Ledger">
+                                    <i class="bi bi-journal-bookmark"></i>
+                                </a>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-list-ul d-block"></i>
+            <p>No accounts found.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

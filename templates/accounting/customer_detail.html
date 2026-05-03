@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ customer.name }}{% endblock %}
+{% block page_title %}Customer: {{ customer.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-person-fill me-2 text-primary"></i>{{ customer.name }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('accounting.customers') }}">Customers</a></li>
+                <li class="breadcrumb-item active">{{ customer.name }}</li>
+            </ol>
+        </nav>
+    </div>
+    {% if current_user.role in ('admin', 'accountant') %}
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('accounting.edit_customer', customer_id=customer.id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <a href="{{ url_for('accounting.create_invoice') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Invoice
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><span><i class="bi bi-person me-2"></i>Contact Information</span></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-4 text-muted" style="font-size:12px;">Name</dt>
+                    <dd class="col-8 fw-semibold">{{ customer.name }}</dd>
+                    <dt class="col-4 text-muted" style="font-size:12px;">Company</dt>
+                    <dd class="col-8">{{ customer.company or '—' }}</dd>
+                    <dt class="col-4 text-muted" style="font-size:12px;">Email</dt>
+                    <dd class="col-8">{{ customer.email or '—' }}</dd>
+                    <dt class="col-4 text-muted" style="font-size:12px;">Phone</dt>
+                    <dd class="col-8">{{ customer.phone or '—' }}</dd>
+                    <dt class="col-4 text-muted" style="font-size:12px;">Address</dt>
+                    <dd class="col-8">{{ customer.address or '—' }}</dd>
+                    <dt class="col-4 text-muted" style="font-size:12px;">Notes</dt>
+                    <dd class="col-8">{{ customer.notes or '—' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header"><span><i class="bi bi-cash-stack me-2"></i>Account Summary</span></div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Invoiced</span>
+                    <span class="fw-semibold monospace">${{ "%.2f"|format(customer.total_invoiced) }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Paid</span>
+                    <span class="fw-semibold monospace text-success">${{ "%.2f"|format(customer.total_paid) }}</span>
+                </div>
+                <hr class="divider">
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold">Balance Due</span>
+                    <span class="fw-bold monospace {% if customer.balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                        ${{ "%.2f"|format(customer.balance) }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <span><i class="bi bi-receipt me-2"></i>Invoice History</span>
+                <span class="badge bg-secondary">{{ customer.invoices|length }} invoices</span>
+            </div>
+            <div class="card-body p-0">
+                {% if customer.invoices %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Invoice #</th>
+                                <th>Date</th>
+                                <th>Due Date</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-end">Paid</th>
+                                <th class="text-end">Balance</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inv in customer.invoices | sort(attribute='date', reverse=True) %}
+                            <tr>
+                                <td class="monospace fw-semibold">{{ inv.invoice_number }}</td>
+                                <td>{{ inv.date.strftime('%b %d, %Y') }}</td>
+                                <td>{{ inv.due_date.strftime('%b %d, %Y') if inv.due_date else '—' }}</td>
+                                <td class="text-end monospace">${{ "%.2f"|format(inv.total) }}</td>
+                                <td class="text-end monospace text-success">${{ "%.2f"|format(inv.amount_paid) }}</td>
+                                <td class="text-end monospace {% if inv.balance_due > 0 %}text-danger{% else %}text-success{% endif %}">
+                                    ${{ "%.2f"|format(inv.balance_due) }}
+                                </td>
+                                <td>
+                                    <span class="badge status-{{ inv.status }}">{{ inv.status | capitalize }}</span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('accounting.invoice_detail', invoice_id=inv.id) }}"
+                                       class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-receipt d-block"></i>
+                    <p>No invoices for this customer yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

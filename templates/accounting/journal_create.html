@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}New Journal Entry{% endblock %}
+{% block page_title %}New Journal Entry{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-journal-plus me-2 text-primary"></i>New Journal Entry</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('accounting.journal_entries') }}">Journal Entries</a></li>
+                <li class="breadcrumb-item active">New</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<form method="POST" id="journal-form">
+    <!-- Header -->
+    <div class="card mb-3">
+        <div class="card-header"><span><i class="bi bi-info-circle me-2"></i>Entry Details</span></div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="date" class="form-label">Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="date" name="date"
+                           value="{{ form_data.get('date', today) }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="description" class="form-label">Description <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="description" name="description"
+                           value="{{ form_data.get('description', '') }}"
+                           placeholder="e.g. Record monthly rent payment" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="reference" class="form-label">Reference / Check #</label>
+                    <input type="text" class="form-control" id="reference" name="reference"
+                           value="{{ form_data.get('reference', '') }}"
+                           placeholder="e.g. CHK-001">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Journal Lines -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <span><i class="bi bi-table me-2"></i>Journal Lines</span>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="add-line-btn">
+                <i class="bi bi-plus-circle me-1"></i> Add Line
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table mb-0 journal-lines-table" id="lines-table">
+                    <thead>
+                        <tr>
+                            <th style="width:35%;">Account <span class="text-danger">*</span></th>
+                            <th style="width:30%;">Description</th>
+                            <th style="width:15%;" class="text-end">Debit ($)</th>
+                            <th style="width:15%;" class="text-end">Credit ($)</th>
+                            <th style="width:5%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="lines-body">
+                        <!-- Initial rows -->
+                        {% for i in range(4) %}
+                        <tr class="line-row">
+                            <td>
+                                <select class="form-select form-select-sm" name="account_id[]">
+                                    <option value="">-- Select Account --</option>
+                                    {% for acc in accounts %}
+                                    <option value="{{ acc.id }}">{{ acc.code }} – {{ acc.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" class="form-control form-control-sm" name="line_description[]"
+                                       placeholder="Optional description">
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm text-end debit-input"
+                                       name="debit[]" value="0.00" min="0" step="0.01">
+                            </td>
+                            <td>
+                                <input type="number" class="form-control form-control-sm text-end credit-input"
+                                       name="credit[]" value="0.00" min="0" step="0.01">
+                            </td>
+                            <td class="text-center">
+                                <button type="button" class="btn-remove-line" title="Remove">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background:#f8f9fa; font-weight:600;">
+                            <td colspan="2" class="text-end py-2 px-3">Totals:</td>
+                            <td class="text-end py-2 px-3 monospace" id="total-debit">$0.00</td>
+                            <td class="text-end py-2 px-3 monospace" id="total-credit">$0.00</td>
+                            <td></td>
+                        </tr>
+                        <tr id="balance-row" style="display:none;">
+                            <td colspan="5" class="text-center py-2">
+                                <span id="balance-msg" class="badge"></span>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules reminder -->
+    <div class="alert alert-info alert-sm mb-3" style="font-size:12.5px;">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <strong>Double-Entry Rule:</strong> Total Debits must equal Total Credits before the entry can be posted.
+        Assets &amp; Expenses increase with Debit. Liabilities, Equity &amp; Revenue increase with Credit.
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-send-check me-1"></i> Post Journal Entry
+        </button>
+        <a href="{{ url_for('accounting.journal_entries') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-x-circle me-1"></i> Cancel
+        </a>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ---- Row template (account options) ----
+const accountOptions = `{% for acc in accounts %}<option value="{{ acc.id }}">{{ acc.code }} – {{ acc.name }}</option>{% endfor %}`;
+
+function buildRow() {
+    const tr = document.createElement('tr');
+    tr.className = 'line-row';
+    tr.innerHTML = `
+        <td>
+            <select class="form-select form-select-sm" name="account_id[]">
+                <option value="">-- Select Account --</option>
+                ${accountOptions}
+            </select>
+        </td>
+        <td>
+            <input type="text" class="form-control form-control-sm" name="line_description[]" placeholder="Optional description">
+        </td>
+        <td>
+            <input type="number" class="form-control form-control-sm text-end debit-input" name="debit[]" value="0.00" min="0" step="0.01">
+        </td>
+        <td>
+            <input type="number" class="form-control form-control-sm text-end credit-input" name="credit[]" value="0.00" min="0" step="0.01">
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn-remove-line" title="Remove"><i class="bi bi-x-circle"></i></button>
+        </td>`;
+    return tr;
+}
+
+document.getElementById('add-line-btn').addEventListener('click', function () {
+    document.getElementById('lines-body').appendChild(buildRow());
+    updateTotals();
+});
+
+document.getElementById('lines-body').addEventListener('click', function (e) {
+    const btn = e.target.closest('.btn-remove-line');
+    if (btn) {
+        const rows = document.querySelectorAll('.line-row');
+        if (rows.length > 1) {
+            btn.closest('tr').remove();
+            updateTotals();
+        }
+    }
+});
+
+document.getElementById('lines-body').addEventListener('input', updateTotals);
+
+function updateTotals() {
+    let totalDr = 0, totalCr = 0;
+    document.querySelectorAll('.debit-input').forEach(el => totalDr += parseFloat(el.value) || 0);
+    document.querySelectorAll('.credit-input').forEach(el => totalCr += parseFloat(el.value) || 0);
+
+    document.getElementById('total-debit').textContent = '$' + totalDr.toFixed(2);
+    document.getElementById('total-credit').textContent = '$' + totalCr.toFixed(2);
+
+    const row = document.getElementById('balance-row');
+    const msg = document.getElementById('balance-msg');
+    const diff = Math.abs(totalDr - totalCr);
+
+    if (totalDr === 0 && totalCr === 0) {
+        row.style.display = 'none';
+    } else {
+        row.style.display = '';
+        if (diff < 0.01) {
+            msg.className = 'badge bg-success';
+            msg.textContent = '✓ Balanced';
+        } else {
+            msg.className = 'badge bg-danger';
+            msg.textContent = `Unbalanced – Difference: $${diff.toFixed(2)}`;
+        }
+    }
+}
+
+updateTotals();
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Financial Reports{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-bar-chart-line-fill me-2 text-primary"></i>Financial Reports</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active">Reports</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6 col-lg-3">
+        <a href="{{ url_for('reports.trial_balance') }}" class="text-decoration-none">
+            <div class="card h-100 hover-shadow">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon blue mx-auto mb-3" style="width:64px;height:64px;font-size:28px;">
+                        <i class="bi bi-table"></i>
+                    </div>
+                    <h5 class="fw-bold mb-1">Trial Balance</h5>
+                    <p class="text-muted mb-0" style="font-size:12.5px;">
+                        Verify that total debits equal total credits across all accounts.
+                    </p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <a href="{{ url_for('reports.profit_loss') }}" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon green mx-auto mb-3" style="width:64px;height:64px;font-size:28px;">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h5 class="fw-bold mb-1">Profit & Loss</h5>
+                    <p class="text-muted mb-0" style="font-size:12.5px;">
+                        Revenue vs. expenses and net income for a selected period.
+                    </p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <a href="{{ url_for('reports.balance_sheet') }}" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon teal mx-auto mb-3" style="width:64px;height:64px;font-size:28px;">
+                        <i class="bi bi-clipboard-data"></i>
+                    </div>
+                    <h5 class="fw-bold mb-1">Balance Sheet</h5>
+                    <p class="text-muted mb-0" style="font-size:12.5px;">
+                        Assets, liabilities, and equity snapshot as of a given date.
+                    </p>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <a href="{{ url_for('reports.general_ledger') }}" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body text-center py-4">
+                    <div class="stat-icon orange mx-auto mb-3" style="width:64px;height:64px;font-size:28px;">
+                        <i class="bi bi-journal-bookmark"></i>
+                    </div>
+                    <h5 class="fw-bold mb-1">General Ledger</h5>
+                    <p class="text-muted mb-0" style="font-size:12.5px;">
+                        Detailed transaction history and running balance per account.
+                    </p>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

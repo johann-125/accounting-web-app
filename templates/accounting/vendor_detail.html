@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}{{ vendor.name }}{% endblock %}
+{% block page_title %}Vendor: {{ vendor.name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-shop me-2 text-primary"></i>{{ vendor.name }}</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('accounting.vendors') }}">Vendors</a></li>
+                <li class="breadcrumb-item active">{{ vendor.name }}</li>
+            </ol>
+        </nav>
+    </div>
+    {% if current_user.role in ('admin', 'accountant') %}
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('accounting.edit_vendor', vendor_id=vendor.id) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <a href="{{ url_for('accounting.create_expense') }}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-circle me-1"></i> New Expense
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><span><i class="bi bi-shop me-2"></i>Vendor Information</span></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-4 text-muted" style="font-size:12px;">Name</dt>
+                    <dd class="col-8 fw-semibold">{{ vendor.name }}</dd>
+                    <dt class="col-4 text-muted" style="font-size:12px;">Company</dt>
+                    <dd class="col-8">{{ vendor.company or '—' }}</dd>
+                    <dt class="col-4 text-muted" style="font-size:12px;">Email</dt>
+                    <dd class="col-8">{{ vendor.email or '—' }}</dd>
+                    <dt class="col-4 text-muted" style="font-size:12px;">Phone</dt>
+                    <dd class="col-8">{{ vendor.phone or '—' }}</dd>
+                    <dt class="col-4 text-muted" style="font-size:12px;">Address</dt>
+                    <dd class="col-8">{{ vendor.address or '—' }}</dd>
+                    <dt class="col-4 text-muted" style="font-size:12px;">Notes</dt>
+                    <dd class="col-8">{{ vendor.notes or '—' }}</dd>
+                </dl>
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-header"><span><i class="bi bi-cash me-2"></i>AP Summary</span></div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Total Expenses</span>
+                    <span class="monospace fw-semibold">${{ "%.2f"|format(vendor.total_expenses) }}</span>
+                </div>
+                <hr class="divider">
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold">Outstanding (AP)</span>
+                    <span class="fw-bold monospace {% if vendor.balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                        ${{ "%.2f"|format(vendor.balance) }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <span><i class="bi bi-cash-coin me-2"></i>Expense History</span>
+                <span class="badge bg-secondary">{{ vendor.expenses|length }} expenses</span>
+            </div>
+            <div class="card-body p-0">
+                {% if vendor.expenses %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Expense #</th>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Account</th>
+                                <th class="text-end">Amount</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exp in vendor.expenses | sort(attribute='date', reverse=True) %}
+                            <tr>
+                                <td class="monospace fw-semibold">{{ exp.expense_number }}</td>
+                                <td>{{ exp.date.strftime('%b %d, %Y') }}</td>
+                                <td>{{ exp.description[:40] }}{% if exp.description|length > 40 %}…{% endif %}</td>
+                                <td class="text-muted" style="font-size:12px;">{{ exp.expense_account.name if exp.expense_account else '—' }}</td>
+                                <td class="text-end monospace">${{ "%.2f"|format(exp.amount) }}</td>
+                                <td>
+                                    <span class="badge status-{{ exp.status }}">{{ exp.status | capitalize }}</span>
+                                </td>
+                                <td>
+                                    {% if exp.status == 'unpaid' and current_user.role in ('admin', 'accountant') %}
+                                    <form method="POST" action="{{ url_for('accounting.pay_expense', expense_id=exp.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-success"
+                                                onclick="return confirm('Mark this expense as paid?')">Pay</button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-cash-coin d-block"></i>
+                    <p>No expenses for this vendor yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

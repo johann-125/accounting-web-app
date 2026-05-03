@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Expenses{% endblock %}
+{% block page_title %}Expenses{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-cash-coin me-2 text-primary"></i>Expenses</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active">Expenses</li>
+            </ol>
+        </nav>
+    </div>
+    {% if current_user.role in ('admin', 'accountant') %}
+    <a href="{{ url_for('accounting.create_expense') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Record Expense
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filter -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span style="font-size:12px; font-weight:600; color:#6c757d;">Filter:</span>
+            <a href="{{ url_for('accounting.expenses') }}"
+               class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
+            <a href="{{ url_for('accounting.expenses', status='unpaid') }}"
+               class="btn btn-sm {% if status_filter == 'unpaid' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Unpaid</a>
+            <a href="{{ url_for('accounting.expenses', status='paid') }}"
+               class="btn btn-sm {% if status_filter == 'paid' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Paid</a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Expenses <span class="badge bg-secondary ms-1">{{ expenses|length }}</span></span>
+    </div>
+    <div class="card-body p-0">
+        {% if expenses %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Expense #</th>
+                        <th>Date</th>
+                        <th>Vendor</th>
+                        <th>Account</th>
+                        <th>Description</th>
+                        <th class="text-end">Amount</th>
+                        <th>Status</th>
+                        {% if current_user.role in ('admin', 'accountant') %}
+                        <th class="text-center">Actions</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for exp in expenses %}
+                    <tr>
+                        <td class="monospace fw-semibold">{{ exp.expense_number }}</td>
+                        <td>{{ exp.date.strftime('%b %d, %Y') }}</td>
+                        <td>
+                            {% if exp.vendor %}
+                            <a href="{{ url_for('accounting.vendor_detail', vendor_id=exp.vendor_id) }}"
+                               class="text-decoration-none">{{ exp.vendor.name }}</a>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="text-muted" style="font-size:12px;">
+                            {{ exp.expense_account.name if exp.expense_account else '—' }}
+                        </td>
+                        <td>{{ exp.description[:50] }}{% if exp.description|length > 50 %}…{% endif %}</td>
+                        <td class="text-end monospace fw-semibold">${{ "%.2f"|format(exp.amount) }}</td>
+                        <td>
+                            <span class="badge status-{{ exp.status }}">{{ exp.status | capitalize }}</span>
+                        </td>
+                        {% if current_user.role in ('admin', 'accountant') %}
+                        <td class="text-center">
+                            {% if exp.status == 'unpaid' %}
+                            <form method="POST" action="{{ url_for('accounting.pay_expense', expense_id=exp.id) }}"
+                                  style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Mark Paid"
+                                        onclick="return confirm('Mark expense {{ exp.expense_number }} as paid?')">
+                                    <i class="bi bi-check-circle"></i> Pay
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-success"><i class="bi bi-check-circle-fill"></i></span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr style="background:#f8f9fa;">
+                        <td colspan="5" class="text-end fw-bold px-3">Total</td>
+                        <td class="text-end monospace fw-bold px-3">
+                            ${{ "%.2f"|format(expenses | sum(attribute='amount') | float) }}
+                        </td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-cash-coin d-block"></i>
+            <p>No expenses found. <a href="{{ url_for('accounting.create_expense') }}">Record the first expense</a>.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

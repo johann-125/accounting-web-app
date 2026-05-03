@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ action }} Account{% endblock %}
+{% block page_title %}{{ action }} Account{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-{% if action == 'Create' %}plus-circle{% else %}pencil{% endif %}-fill me-2 text-primary"></i>{{ action }} Account</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('accounting.accounts') }}">Accounts</a></li>
+                <li class="breadcrumb-item active">{{ action }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <span><i class="bi bi-list-columns-reverse me-2"></i>Account Details</span>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% if action == 'Create' %}
+                    <div class="mb-3">
+                        <label for="code" class="form-label">Account Code <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="code" name="code"
+                               value="{{ form_data.get('code', '') }}"
+                               placeholder="e.g. 1000, 2000, 4100" required>
+                        <div class="form-text">Unique identifier for this account (e.g. 1000 = Cash)</div>
+                    </div>
+                    {% else %}
+                    <div class="mb-3">
+                        <label class="form-label">Account Code</label>
+                        <input type="text" class="form-control" value="{{ account.code }}" disabled>
+                        <div class="form-text">Account code cannot be changed after creation.</div>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Account Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name"
+                               value="{{ form_data.get('name', '') }}"
+                               placeholder="e.g. Cash and Cash Equivalents" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="account_type" class="form-label">Account Type <span class="text-danger">*</span></label>
+                        <select class="form-select" id="account_type" name="account_type" required>
+                            <option value="">-- Select Type --</option>
+                            {% for atype in account_types %}
+                            <option value="{{ atype }}"
+                                    {% if form_data.get('account_type') == atype %}selected{% endif %}>
+                                {{ atype }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"
+                                  placeholder="Optional description of this account">{{ form_data.get('description', '') }}</textarea>
+                    </div>
+
+                    <!-- Account Type Guide -->
+                    <div class="alert alert-light border mb-4" style="font-size:12.5px;">
+                        <strong>Account Type Guide:</strong>
+                        <ul class="mb-0 mt-1 ps-3">
+                            <li><strong>Asset (1xxx):</strong> Cash, Receivables, Equipment — Normal balance: Debit</li>
+                            <li><strong>Liability (2xxx):</strong> Payables, Loans — Normal balance: Credit</li>
+                            <li><strong>Equity (3xxx):</strong> Owner's equity — Normal balance: Credit</li>
+                            <li><strong>Revenue (4xxx):</strong> Income, sales — Normal balance: Credit</li>
+                            <li><strong>Expense (5xxx):</strong> Operating costs — Normal balance: Debit</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i> {{ action }} Account
+                        </button>
+                        <a href="{{ url_for('accounting.accounts') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

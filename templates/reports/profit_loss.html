@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Profit & Loss{% endblock %}
+{% block page_title %}Profit & Loss Statement{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-graph-up me-2 text-primary"></i>Profit & Loss Statement</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}">Reports</a></li>
+                <li class="breadcrumb-item active">Profit & Loss</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Date Filter -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="start_date" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date"
+                       value="{{ start_date }}">
+            </div>
+            <div class="col-md-3">
+                <label for="end_date" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date"
+                       value="{{ end_date }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Generate
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- P&L Report -->
+<div class="report-container">
+    <div class="report-header">
+        <h2>Profit & Loss Statement</h2>
+        <p>For the period from <strong>{{ start_date }}</strong> to <strong>{{ end_date }}</strong></p>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Account</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Revenue Section -->
+                <tr class="report-section-header">
+                    <td colspan="3">Revenue</td>
+                </tr>
+                {% for row in revenue_rows %}
+                <tr>
+                    <td class="monospace ps-4">{{ row.code }}</td>
+                    <td class="ps-4">{{ row.name }}</td>
+                    <td class="text-end monospace {% if row.amount >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        ${{ "%.2f"|format(row.amount) }}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not revenue_rows %}
+                <tr><td colspan="3" class="text-muted text-center py-2">No revenue transactions.</td></tr>
+                {% endif %}
+                <tr class="report-total-row">
+                    <td colspan="2" class="text-end">Total Revenue</td>
+                    <td class="text-end monospace text-success">${{ "%.2f"|format(total_revenue) }}</td>
+                </tr>
+
+                <!-- Spacer -->
+                <tr><td colspan="3" style="height:8px;"></td></tr>
+
+                <!-- Expenses Section -->
+                <tr class="report-section-header">
+                    <td colspan="3">Expenses</td>
+                </tr>
+                {% for row in expense_rows %}
+                <tr>
+                    <td class="monospace ps-4">{{ row.code }}</td>
+                    <td class="ps-4">{{ row.name }}</td>
+                    <td class="text-end monospace text-danger">${{ "%.2f"|format(row.amount) }}</td>
+                </tr>
+                {% endfor %}
+                {% if not expense_rows %}
+                <tr><td colspan="3" class="text-muted text-center py-2">No expense transactions.</td></tr>
+                {% endif %}
+                <tr class="report-total-row">
+                    <td colspan="2" class="text-end">Total Expenses</td>
+                    <td class="text-end monospace text-danger">${{ "%.2f"|format(total_expenses) }}</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="report-grand-total">
+                    <td colspan="2" class="text-end">
+                        {% if net_profit >= 0 %}Net Profit{% else %}Net Loss{% endif %}
+                    </td>
+                    <td class="text-end monospace {% if net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        ${{ "%.2f"|format(net_profit) }}
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- Profit margin card -->
+<div class="row mt-3 g-3">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="bi bi-graph-up-arrow"></i></div>
+            <div>
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-value positive">${{ "%.2f"|format(total_revenue) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="bi bi-graph-down-arrow"></i></div>
+            <div>
+                <div class="stat-label">Total Expenses</div>
+                <div class="stat-value negative">${{ "%.2f"|format(total_expenses) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="stat-icon {% if net_profit >= 0 %}blue{% else %}red{% endif %}">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div>
+                <div class="stat-label">Net {% if net_profit >= 0 %}Profit{% else %}Loss{% endif %}</div>
+                <div class="stat-value {% if net_profit >= 0 %}positive{% else %}negative{% endif %}">
+                    ${{ "%.2f"|format(net_profit) }}
+                </div>
+                {% if total_revenue > 0 %}
+                <div style="font-size:11px; color:#6c757d;">
+                    {{ "%.1f"|format((net_profit / total_revenue) * 100) }}% margin
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

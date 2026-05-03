@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Payments{% endblock %}
+{% block page_title %}Payments{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-credit-card-2-front me-2 text-primary"></i>Payments</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active">Payments</li>
+            </ol>
+        </nav>
+    </div>
+    {% if current_user.role in ('admin', 'accountant') %}
+    <a href="{{ url_for('accounting.create_payment') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Record Payment
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>All Payments <span class="badge bg-secondary ms-1">{{ payments|length }}</span></span>
+    </div>
+    <div class="card-body p-0">
+        {% if payments %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Payment #</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Reference</th>
+                        <th>Account</th>
+                        <th>Notes</th>
+                        <th class="text-end">Amount</th>
+                        <th>Recorded By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in payments %}
+                    <tr>
+                        <td class="monospace fw-semibold">{{ p.payment_number }}</td>
+                        <td>{{ p.date.strftime('%b %d, %Y') }}</td>
+                        <td>
+                            <span class="badge {% if p.payment_type == 'invoice' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                                {{ p.payment_type | capitalize }}
+                            </span>
+                        </td>
+                        <td class="monospace" style="font-size:12px;">
+                            {% if p.payment_type == 'invoice' and p.invoice %}
+                                <a href="{{ url_for('accounting.invoice_detail', invoice_id=p.invoice_id) }}" class="text-decoration-none">
+                                    {{ p.invoice.invoice_number }}
+                                </a>
+                            {% elif p.payment_type == 'expense' and p.expense %}
+                                {{ p.expense.expense_number }}
+                            {% else %}—{% endif %}
+                        </td>
+                        <td class="text-muted" style="font-size:12px;">
+                            {{ p.payment_account.name if p.payment_account else '—' }}
+                        </td>
+                        <td class="text-muted" style="font-size:12.5px;">
+                            {{ p.notes[:40] if p.notes else '—' }}
+                        </td>
+                        <td class="text-end monospace fw-semibold text-success">
+                            ${{ "%.2f"|format(p.amount) }}
+                        </td>
+                        <td style="font-size:12.5px;">
+                            {{ p.creator.full_name if p.creator else '—' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr style="background:#f8f9fa;">
+                        <td colspan="6" class="text-end fw-bold px-3">Total Payments</td>
+                        <td class="text-end monospace fw-bold text-success px-3">
+                            ${{ "%.2f"|format(payments | sum(attribute='amount') | float) }}
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-credit-card d-block"></i>
+            <p>No payments recorded yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

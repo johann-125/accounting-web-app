@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Trial Balance{% endblock %}
+{% block page_title %}Trial Balance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-table me-2 text-primary"></i>Trial Balance</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}">Reports</a></li>
+                <li class="breadcrumb-item active">Trial Balance</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Date Filter -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="start_date" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="start_date" name="start_date"
+                       value="{{ start_date }}">
+            </div>
+            <div class="col-md-3">
+                <label for="end_date" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="end_date" name="end_date"
+                       value="{{ end_date }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Generate
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('reports.trial_balance') }}" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x me-1"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Trial Balance Report -->
+<div class="report-container">
+    <div class="report-header">
+        <h2>Trial Balance</h2>
+        <p>
+            {% if start_date %}From {{ start_date }} to {{ end_date }}{% else %}All periods through {{ end_date }}{% endif %}
+        </p>
+        <div class="mt-2">
+            {% if balanced %}
+            <span class="badge bg-success fs-6"><i class="bi bi-check-circle me-1"></i> Balanced</span>
+            {% else %}
+            <span class="badge bg-danger fs-6"><i class="bi bi-exclamation-circle me-1"></i> Unbalanced</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th style="width:15%;">Code</th>
+                    <th style="width:40%;">Account Name</th>
+                    <th style="width:15%;">Type</th>
+                    <th style="width:15%;" class="text-end">Debit</th>
+                    <th style="width:15%;" class="text-end">Credit</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set prev_type = namespace(value='') %}
+                {% for row in rows %}
+                    {% if row.type != prev_type.value %}
+                    <tr class="report-section-header">
+                        <td colspan="5">{{ row.type }} Accounts</td>
+                    </tr>
+                    {% set prev_type.value = row.type %}
+                    {% endif %}
+                    <tr>
+                        <td class="monospace">{{ row.code }}</td>
+                        <td>{{ row.name }}</td>
+                        <td><span class="badge bg-secondary">{{ row.type }}</span></td>
+                        <td class="text-end monospace">
+                            {% if row.debit > 0 %}<span>${{ "%.2f"|format(row.debit) }}</span>{% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                        <td class="text-end monospace">
+                            {% if row.credit > 0 %}<span>${{ "%.2f"|format(row.credit) }}</span>{% else %}<span class="text-muted">—</span>{% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                {% if not rows %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">No transactions found for the selected period.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+            <tfoot>
+                <tr class="report-grand-total">
+                    <td colspan="3" class="text-end">TOTALS</td>
+                    <td class="text-end monospace">${{ "%.2f"|format(total_dr) }}</td>
+                    <td class="text-end monospace">${{ "%.2f"|format(total_cr) }}</td>
+                </tr>
+                {% if not balanced and total_dr != total_cr %}
+                <tr class="table-danger">
+                    <td colspan="3" class="text-end text-danger fw-semibold">Difference</td>
+                    <td colspan="2" class="text-end monospace text-danger fw-semibold">
+                        ${{ "%.2f"|format((total_dr - total_cr)|abs) }}
+                    </td>
+                </tr>
+                {% endif %}
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}

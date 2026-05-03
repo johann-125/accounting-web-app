@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Vendors{% endblock %}
+{% block page_title %}Vendors{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-shop me-2 text-primary"></i>Vendors</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active">Vendors</li>
+            </ol>
+        </nav>
+    </div>
+    {% if current_user.role in ('admin', 'accountant') %}
+    <a href="{{ url_for('accounting.create_vendor') }}" class="btn btn-primary">
+        <i class="bi bi-shop me-1"></i> Add Vendor
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>All Vendors <span class="badge bg-secondary ms-1">{{ vendors|length }}</span></span>
+    </div>
+    <div class="card-body p-0">
+        {% if vendors %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Company</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th class="text-end">Total Expenses</th>
+                        <th class="text-end">Balance Due (AP)</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vendors %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('accounting.vendor_detail', vendor_id=v.id) }}"
+                               class="text-decoration-none fw-semibold">
+                                {{ v.name }}
+                            </a>
+                        </td>
+                        <td class="text-muted">{{ v.company or '—' }}</td>
+                        <td>{{ v.email or '—' }}</td>
+                        <td>{{ v.phone or '—' }}</td>
+                        <td class="text-end monospace">${{ "%.2f"|format(v.total_expenses) }}</td>
+                        <td class="text-end monospace fw-semibold {% if v.balance > 0 %}text-danger{% else %}text-muted{% endif %}">
+                            ${{ "%.2f"|format(v.balance) }}
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{{ url_for('accounting.vendor_detail', vendor_id=v.id) }}"
+                                   class="btn btn-sm btn-outline-secondary" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if current_user.role in ('admin', 'accountant') %}
+                                <a href="{{ url_for('accounting.edit_vendor', vendor_id=v.id) }}"
+                                   class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-shop d-block"></i>
+            <p>No vendors yet. <a href="{{ url_for('accounting.create_vendor') }}">Add the first vendor</a>.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

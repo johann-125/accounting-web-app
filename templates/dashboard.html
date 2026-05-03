@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPI Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="bi bi-graph-up-arrow"></i></div>
+            <div>
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-value positive">${{ "%.2f"|format(total_revenue) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div class="stat-icon red"><i class="bi bi-graph-down-arrow"></i></div>
+            <div>
+                <div class="stat-label">Total Expenses</div>
+                <div class="stat-value negative">${{ "%.2f"|format(total_expenses) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="stat-card">
+            <div class="stat-icon {% if net_profit >= 0 %}blue{% else %}red{% endif %}">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div>
+                <div class="stat-label">Net Profit</div>
+                <div class="stat-value {% if net_profit >= 0 %}positive{% else %}negative{% endif %}">
+                    ${{ "%.2f"|format(net_profit) }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon orange"><i class="bi bi-hourglass-split"></i></div>
+            <div>
+                <div class="stat-label">Outstanding Receivables</div>
+                <div class="stat-value">${{ "%.2f"|format(outstanding_receivables) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon purple"><i class="bi bi-credit-card"></i></div>
+            <div>
+                <div class="stat-label">Outstanding Payables</div>
+                <div class="stat-value">${{ "%.2f"|format(outstanding_payables) }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon teal"><i class="bi bi-cash-stack"></i></div>
+            <div>
+                <div class="stat-label">Cash Balance</div>
+                <div class="stat-value">${{ "%.2f"|format(cash_balance) }}</div>
+            </div>
+        </div>
+    </div>
+    {% if total_users is not none %}
+    <div class="col-sm-6 col-xl-3">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="bi bi-people-fill"></i></div>
+            <div>
+                <div class="stat-label">Total Users</div>
+                <div class="stat-value">{{ total_users }}</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Actions -->
+{% if current_user.role in ('admin', 'accountant') %}
+<div class="card mb-4">
+    <div class="card-header">
+        <span><i class="bi bi-lightning-fill me-2 text-warning"></i>Quick Actions</span>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('accounting.create_invoice') }}" class="btn btn-primary btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> New Invoice
+            </a>
+            <a href="{{ url_for('accounting.create_expense') }}" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-plus-circle me-1"></i> Record Expense
+            </a>
+            <a href="{{ url_for('accounting.create_journal_entry') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-journal-plus me-1"></i> Journal Entry
+            </a>
+            <a href="{{ url_for('accounting.create_customer') }}" class="btn btn-outline-success btn-sm">
+                <i class="bi bi-person-plus me-1"></i> New Customer
+            </a>
+            <a href="{{ url_for('accounting.create_payment') }}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-cash me-1"></i> Record Payment
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+    <!-- Recent Journal Entries -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <span><i class="bi bi-journal-text me-2"></i>Recent Journal Entries</span>
+                {% if current_user.role in ('admin', 'accountant') %}
+                <a href="{{ url_for('accounting.journal_entries') }}" class="btn btn-outline-primary btn-sm">
+                    View All
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body p-0">
+                {% if recent_entries %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Entry #</th>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th class="text-end">Amount</th>
+                                <th>Posted By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in recent_entries %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('accounting.journal_detail', entry_id=entry.id) }}"
+                                       class="text-decoration-none fw-semibold monospace">
+                                        {{ entry.entry_number }}
+                                    </a>
+                                </td>
+                                <td>{{ entry.date.strftime('%b %d, %Y') }}</td>
+                                <td>{{ entry.description[:50] }}{% if entry.description|length > 50 %}…{% endif %}</td>
+                                <td class="text-end monospace">${{ "%.2f"|format(entry.total_debit) }}</td>
+                                <td>{{ entry.creator.full_name if entry.creator else '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-journal d-block"></i>
+                    <p>No journal entries yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Invoices -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <span><i class="bi bi-receipt me-2"></i>Recent Invoices</span>
+                <a href="{{ url_for('accounting.invoices') }}" class="btn btn-outline-primary btn-sm">
+                    View All
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_invoices %}
+                <ul class="list-group list-group-flush">
+                    {% for inv in recent_invoices %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <div class="fw-semibold monospace" style="font-size:13px;">{{ inv.invoice_number }}</div>
+                            <div style="font-size:12px; color:#6c757d;">{{ inv.customer.name }}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-semibold" style="font-size:13px;">${{ "%.2f"|format(inv.total) }}</div>
+                            <span class="badge status-{{ inv.status }}">{{ inv.status | capitalize }}</span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-receipt d-block"></i>
+                    <p>No invoices yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Reports Shortcuts -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <span><i class="bi bi-bar-chart me-2"></i>Reports</span>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('reports.trial_balance') }}" class="list-group-item list-group-item-action py-2">
+                    <i class="bi bi-table me-2 text-primary"></i> Trial Balance
+                </a>
+                <a href="{{ url_for('reports.profit_loss') }}" class="list-group-item list-group-item-action py-2">
+                    <i class="bi bi-graph-up me-2 text-success"></i> Profit & Loss
+                </a>
+                <a href="{{ url_for('reports.balance_sheet') }}" class="list-group-item list-group-item-action py-2">
+                    <i class="bi bi-clipboard-data me-2 text-info"></i> Balance Sheet
+                </a>
+                <a href="{{ url_for('reports.general_ledger') }}" class="list-group-item list-group-item-action py-2">
+                    <i class="bi bi-journal-bookmark me-2 text-warning"></i> General Ledger
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

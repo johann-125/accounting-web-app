@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block title %}Balance Sheet{% endblock %}
+{% block page_title %}Balance Sheet{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-clipboard-data me-2 text-primary"></i>Balance Sheet</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('reports.index') }}">Reports</a></li>
+                <li class="breadcrumb-item active">Balance Sheet</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Date Filter -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="GET" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="as_of" class="form-label">As of Date</label>
+                <input type="date" class="form-control" id="as_of" name="as_of" value="{{ as_of }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Generate
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- Assets Column -->
+    <div class="col-lg-6">
+        <div class="report-container">
+            <div class="report-header">
+                <h2>Assets</h2>
+                <p>As of {{ as_of }}</p>
+            </div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <tbody>
+                        <tr class="report-section-header">
+                            <td colspan="2">Assets</td>
+                        </tr>
+                        {% for row in asset_rows %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="monospace text-muted me-2" style="font-size:12px;">{{ row.code }}</span>
+                                {{ row.name }}
+                            </td>
+                            <td class="text-end monospace {% if row.amount >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                ${{ "%.2f"|format(row.amount) }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not asset_rows %}
+                        <tr><td colspan="2" class="text-muted text-center py-2">No assets.</td></tr>
+                        {% endif %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="report-grand-total">
+                            <td class="text-end fw-bold">Total Assets</td>
+                            <td class="text-end monospace fw-bold text-success">${{ "%.2f"|format(total_assets) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liabilities + Equity Column -->
+    <div class="col-lg-6">
+        <div class="report-container">
+            <div class="report-header">
+                <h2>Liabilities & Equity</h2>
+                <p>As of {{ as_of }}</p>
+            </div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <tbody>
+                        <tr class="report-section-header">
+                            <td colspan="2">Liabilities</td>
+                        </tr>
+                        {% for row in liability_rows %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="monospace text-muted me-2" style="font-size:12px;">{{ row.code }}</span>
+                                {{ row.name }}
+                            </td>
+                            <td class="text-end monospace">${{ "%.2f"|format(row.amount) }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if not liability_rows %}
+                        <tr><td colspan="2" class="text-muted text-center py-2">No liabilities.</td></tr>
+                        {% endif %}
+                        <tr class="report-total-row">
+                            <td class="text-end">Total Liabilities</td>
+                            <td class="text-end monospace">${{ "%.2f"|format(total_liabilities) }}</td>
+                        </tr>
+
+                        <tr><td colspan="2" style="height:8px;"></td></tr>
+
+                        <tr class="report-section-header">
+                            <td colspan="2">Equity</td>
+                        </tr>
+                        {% for row in equity_rows %}
+                        <tr>
+                            <td class="ps-4">
+                                <span class="monospace text-muted me-2" style="font-size:12px;">{{ row.code }}</span>
+                                {{ row.name }}
+                            </td>
+                            <td class="text-end monospace">${{ "%.2f"|format(row.amount) }}</td>
+                        </tr>
+                        {% endfor %}
+                        <!-- Net Income (current period) -->
+                        <tr>
+                            <td class="ps-4 text-muted">Net Income (Current Period)</td>
+                            <td class="text-end monospace {% if net_income >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                ${{ "%.2f"|format(net_income) }}
+                            </td>
+                        </tr>
+                        <tr class="report-total-row">
+                            <td class="text-end">Total Equity</td>
+                            <td class="text-end monospace">${{ "%.2f"|format(total_equity) }}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="report-grand-total">
+                            <td class="text-end fw-bold">Total Liabilities & Equity</td>
+                            <td class="text-end monospace fw-bold">${{ "%.2f"|format(total_liabilities + total_equity) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Accounting Equation Check -->
+<div class="mt-3">
+    {% set diff = (total_assets - (total_liabilities + total_equity))|abs %}
+    {% if diff < 0.01 %}
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>Balanced:</strong> Assets (${{ "%.2f"|format(total_assets) }}) =
+        Liabilities (${{ "%.2f"|format(total_liabilities) }}) +
+        Equity (${{ "%.2f"|format(total_equity) }})
+    </div>
+    {% else %}
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>
+        <strong>Imbalanced:</strong> Difference of ${{ "%.2f"|format(diff) }}.
+        Assets ≠ Liabilities + Equity. Check for missing entries.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

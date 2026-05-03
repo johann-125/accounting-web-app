@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"[accounting-plugin] File modified: $(jq -r '.tool_input.file_path' 2>/dev/null || echo 'unknown')\""
+          }
+        ]
+      }
+    ]
+  }
+}

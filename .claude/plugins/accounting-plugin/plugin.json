@@ -1,0 +1,9 @@
+{
+  "name": "accounting-plugin",
+  "version": "1.0.0",
+  "description": "Extends Claude Code with accounting-specific agents, skills, and hooks",
+  "agents": ["agents/pair-programmer"],
+  "skills": ["skills/generate-report"],
+  "hooks": "hooks/hooks.json",
+  "mcpServers": ".mcp.json"
+}

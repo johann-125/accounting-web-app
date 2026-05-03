@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Customers{% endblock %}
+{% block page_title %}Customers{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-person-lines-fill me-2 text-primary"></i>Customers</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+                <li class="breadcrumb-item active">Customers</li>
+            </ol>
+        </nav>
+    </div>
+    {% if current_user.role in ('admin', 'accountant') %}
+    <a href="{{ url_for('accounting.create_customer') }}" class="btn btn-primary">
+        <i class="bi bi-person-plus-fill me-1"></i> Add Customer
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>All Customers <span class="badge bg-secondary ms-1">{{ customers|length }}</span></span>
+    </div>
+    <div class="card-body p-0">
+        {% if customers %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Company</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th class="text-end">Total Invoiced</th>
+                        <th class="text-end">Balance Due</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in customers %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('accounting.customer_detail', customer_id=c.id) }}"
+                               class="text-decoration-none fw-semibold">
+                                {{ c.name }}
+                            </a>
+                        </td>
+                        <td class="text-muted">{{ c.company or '—' }}</td>
+                        <td>{{ c.email or '—' }}</td>
+                        <td>{{ c.phone or '—' }}</td>
+                        <td class="text-end monospace">${{ "%.2f"|format(c.total_invoiced) }}</td>
+                        <td class="text-end monospace fw-semibold {% if c.balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                            ${{ "%.2f"|format(c.balance) }}
+                        </td>
+                        <td>
+                            <span class="badge {% if c.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                {% if c.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-1">
+                                <a href="{{ url_for('accounting.customer_detail', customer_id=c.id) }}"
+                                   class="btn btn-sm btn-outline-secondary" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if current_user.role in ('admin', 'accountant') %}
+                                <a href="{{ url_for('accounting.edit_customer', customer_id=c.id) }}"
+                                   class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-person-lines-fill d-block"></i>
+            <p>No customers yet. <a href="{{ url_for('accounting.create_customer') }}">Add the first customer</a>.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
